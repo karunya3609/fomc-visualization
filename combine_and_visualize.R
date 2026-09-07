@@ -138,7 +138,6 @@ print("  ✓ Saved: 01_disagreement_over_time.png")
 # ────────────────────────────────────────────────────────────────────────
 # VIZ 2: PREDICTION ERROR OVER TIME (THE BIG STORY!)
 # ────────────────────────────────────────────────────────────────────────
-
 plot_error_time <- combined_data %>%
   filter(!is.na(Error)) %>%
   group_by(Year) %>%
@@ -156,6 +155,7 @@ plot_error_time <- combined_data %>%
   annotate("text", x = 2022, y = 2.8, label = "Inflation\nShock", 
            color = "orange", size = 4, fontface = "bold") +
   scale_fill_manual(values = c("FALSE" = "#E74C3C", "TRUE" = "#27AE60")) +
+  scale_x_continuous(breaks = seq(2012, 2025, by = 1)) +
   labs(
     title = "FOMC Prediction Accuracy: The Inflation Shock Story",
     subtitle = "Red = Predicted too high (rates ended up lower) | Green = Predicted too low (rates ended up higher)",
@@ -166,9 +166,8 @@ plot_error_time <- combined_data %>%
   theme(
     legend.position = "none",
     panel.grid.major.x = element_blank(),
-    axis.text.x = element_text(angle = 0)
+    axis.text.x = element_text(angle = 45, hjust = 1)
   )
-
 ggsave("output/02_prediction_error_over_time.png", plot_error_time, width = 14, height = 7, dpi = 300)
 print("  ✓ Saved: 02_prediction_error_over_time.png")
 
@@ -199,7 +198,7 @@ print("  ✓ Saved: 03_predictions_vs_actual.png")
 # VIZ 4: ERROR DISTRIBUTION BY YEAR (BOX PLOT)
 # ────────────────────────────────────────────────────────────────────────
 
-plot_error_dist <- combined_data %>%
+plot4 <- combined_data %>%
   filter(!is.na(Error)) %>%
   mutate(Year = factor(Year, levels = as.character(sort(unique(as.numeric(Year)))))) %>%
   ggplot(aes(x = Year, y = Error, fill = Error > 0)) +
@@ -209,22 +208,16 @@ plot_error_dist <- combined_data %>%
   labs(
     title = "Distribution of Prediction Errors by Year",
     x = "Prediction Year",
-    y = "Error (Actual - Predicted)",
-    subtitle = "Shows range and spread of prediction accuracy"
+    y = "Error (Actual - Predicted)"
   ) +
-  theme(
-    axis.text.x = element_text(angle = 45, hjust = 1),
-    legend.position = "none"
-  )
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 9),  # ← ADJUST SIZE
+        legend.position = "none")
 
 ggsave("output/04_error_distribution.png", plot_error_dist, width = 14, height = 6, dpi = 300)
 print("  ✓ Saved: 04_error_distribution.png")
 
-# ────────────────────────────────────────────────────────────────────────
-# VIZ 5: MEAN ERROR WITH CONFIDENCE BANDS
-# ────────────────────────────────────────────────────────────────────────
-
-error_by_year <- combined_data %>%
+# VIZ 5: Error Over Time with Confidence Intervals
+error_stats <- combined_data %>%
   filter(!is.na(Error)) %>%
   group_by(Year) %>%
   summarise(
@@ -234,29 +227,28 @@ error_by_year <- combined_data %>%
     SE = StdError / sqrt(N),
     CI_Lower = MeanError - 1.96 * SE,
     CI_Upper = MeanError + 1.96 * SE,
-    Year_Num = as.numeric(Year),
     .groups = 'drop'
+  ) %>%
+  mutate(
+    Year_Num = as.numeric(Year)
   )
 
-plot_error_ci <- error_by_year %>%
+plot5 <- error_stats %>%
   ggplot(aes(x = Year_Num, y = MeanError)) +
   geom_ribbon(aes(ymin = CI_Lower, ymax = CI_Upper), alpha = 0.2, fill = "blue") +
-  geom_line(size = 1, color = "blue") +
+  geom_line(linewidth = 1, color = "blue") +
   geom_point(size = 3, color = "blue") +
   geom_hline(yintercept = 0, linetype = "dashed", color = "red", alpha = 0.5) +
-  geom_vline(xintercept = 2022, linetype = "dashed", color = "orange", alpha = 0.5) +
   labs(
     title = "Mean Prediction Error with 95% Confidence Intervals",
     x = "Year",
     y = "Mean Error (percentage points)",
     subtitle = "Shaded area = 95% confidence interval"
   ) +
-  theme(
-    panel.grid.major.x = element_blank()
-  )
+  theme(panel.grid.major.x = element_blank())
 
-ggsave("output/05_error_with_ci.png", plot_error_ci, width = 12, height = 6, dpi = 300)
-print("  ✓ Saved: 05_error_with_ci.png")
+ggsave("output/05_error_with_ci.png", plot5, width = 12, height = 6, dpi = 300)
+message("✓ Saved: 05_error_with_ci.png")
 
 # ────────────────────────────────────────────────────────────────────────
 # VIZ 6: HEATMAP - ERROR BY YEAR AND FOMC DATE
