@@ -39,5 +39,5 @@ This will:
 
 Data Sources
 
-- FOMC Projections: [Federal Reserve SEP](https://www.federalreserve.gov/monetarypolicy/fomcprojtabl.htm)
+- FOMC Projections: Federal Reserve SEP Releases
 - Federal Funds Rates: [FRED](https://fred.stlouisfed.org/series/FEDFUNDS)
